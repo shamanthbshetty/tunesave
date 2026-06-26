@@ -1,0 +1,18 @@
+.spotlight-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.spotlight-bg {
+  position: absolute;
+  inset: 0;
+  opacity: var(--spotlight-opacity, 0);
+  transition: opacity 0.3s ease;
+  background: radial-gradient(
+    var(--spotlight-size) circle at var(--spotlight-x) var(--spotlight-y),
+    var(--spotlight-color),
+    transparent 70%
+  );
+  pointer-events: none;
+  z-index: 1;
+}

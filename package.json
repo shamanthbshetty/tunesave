@@ -1,0 +1,26 @@
+{
+  "name": "tunesave",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "server": "node server/index.js",
+    "client": "npm run dev --prefix client",
+    "dev": "concurrently --kill-others \"npm run server\" \"npm run client\" && start http://localhost:5173",
+    "build": "npm run build --prefix client",
+    "start": "NODE_ENV=production node server/index.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
+    "framer-motion": "^12.42.0",
+    "uuid": "^14.0.1"
+  },
+  "devDependencies": {
+    "concurrently": "^10.0.3"
+  }
+}

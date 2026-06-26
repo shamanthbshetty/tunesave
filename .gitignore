@@ -1,0 +1,6 @@
+node_modules/
+downloads/
+config.json
+client/dist/
+.tmp/
+*.log
