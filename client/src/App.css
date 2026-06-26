@@ -50,11 +50,12 @@
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   overflow: hidden;
-  transition: border-color 0.2s;
+  transition: border-color 0.3s, box-shadow 0.3s;
 }
 
 .search-input-wrapper:focus-within {
   border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.15);
 }
 
 .search-input {
@@ -514,11 +515,12 @@
   gap: 0.5rem;
   padding: 0.4rem 0.5rem;
   border-radius: 6px;
-  transition: background 0.15s;
+  transition: background 0.2s, transform 0.15s;
 }
 
 .history-item:hover {
   background: var(--bg-secondary);
+  transform: translateX(2px);
 }
 
 .history-icon {
@@ -654,12 +656,14 @@
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   overflow: hidden;
-  transition: border-color 0.2s, transform 0.2s;
+  transition: border-color 0.3s, transform 0.3s, box-shadow 0.3s;
+  animation: cardEnter 0.5s cubic-bezier(0.16, 1, 0.3, 1) backwards;
 }
 
 .result-card:hover {
   border-color: var(--border-light);
   transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 }
 
 .result-thumb-wrapper {
@@ -732,6 +736,8 @@
   transition: all 0.2s;
   width: 100%;
   justify-content: center;
+  position: relative;
+  overflow: hidden;
 }
 
 .download-btn:hover:not(:disabled) {
@@ -996,7 +1002,7 @@
 }
 
 .dl-link:hover {
-  background: rgba(29, 185, 84, 0.25);
+  background: rgba(124, 58, 237, 0.25);
 }
 
 .dl-error {
@@ -1124,12 +1130,12 @@ body {
   background: var(--bg-card);
   border-top: 1px solid var(--border);
   z-index: 100;
-  animation: slideUp 0.3s ease;
+  animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @keyframes slideUp {
-  from { transform: translateY(100%); }
-  to { transform: translateY(0); }
+  from { transform: translateY(100%); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
 }
 
 .mini-progress {
@@ -1463,7 +1469,7 @@ body {
   color: var(--accent);
   font-size: 1.3rem;
   font-weight: 600;
-  text-shadow: 0 0 20px rgba(29, 185, 84, 0.3);
+  text-shadow: 0 0 20px rgba(124, 58, 237, 0.3);
 }
 
 .lyrics-loading,
@@ -1511,6 +1517,8 @@ body {
   align-items: center;
   justify-content: center;
   transition: all 0.15s;
+  position: relative;
+  overflow: hidden;
 }
 
 .ctrl-btn:hover {
@@ -1519,10 +1527,6 @@ body {
 
 .ctrl-btn.active {
   color: var(--accent);
-}
-
-.ctrl-btn {
-  position: relative;
 }
 
 .repeat-one-badge {
@@ -1565,21 +1569,6 @@ body {
   transform: scale(1.05);
 }
 
-/* Result card transitions */
-.result-card {
-  transition: border-color 0.3s, transform 0.3s, box-shadow 0.3s;
-}
-
-.result-card:hover {
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-}
-
-/* Download button pulse animation */
-.download-btn {
-  position: relative;
-  overflow: hidden;
-}
-
 .download-btn::after {
   content: '';
   position: absolute;
@@ -1591,15 +1580,6 @@ body {
 
 .download-btn:hover::after {
   transform: translateX(100%);
-}
-
-/* Smooth transitions for history items */
-.history-item {
-  transition: background 0.2s, transform 0.15s;
-}
-
-.history-item:hover {
-  transform: translateX(2px);
 }
 
 /* Panel slide-in animation */
@@ -1615,36 +1595,6 @@ body {
   to {
     opacity: 1;
     transform: translateX(0);
-  }
-}
-
-/* Search bar glow on focus */
-.search-input-wrapper {
-  transition: border-color 0.3s, box-shadow 0.3s;
-}
-
-.search-input-wrapper:focus-within {
-  box-shadow: 0 0 0 3px rgba(29, 185, 84, 0.15);
-}
-
-/* Lyric line transition enhancement */
-.lyrics-line.active {
-  transform: none;
-}
-
-/* Mini player slide up */
-.music-player-mini {
-  animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-@keyframes slideUp {
-  from {
-    transform: translateY(100%);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
   }
 }
 
@@ -1666,10 +1616,6 @@ body {
 }
 
 /* Staggered card entrance */
-.result-card {
-  animation: cardEnter 0.5s cubic-bezier(0.16, 1, 0.3, 1) backwards;
-}
-
 .results-grid .result-card:nth-child(1) { animation-delay: 0.05s; }
 .results-grid .result-card:nth-child(2) { animation-delay: 0.1s; }
 .results-grid .result-card:nth-child(3) { animation-delay: 0.15s; }
@@ -1714,11 +1660,6 @@ body {
 }
 
 /* Active button ripple effect */
-.ctrl-btn {
-  position: relative;
-  overflow: hidden;
-}
-
 .ctrl-btn::after {
   content: '';
   position: absolute;

@@ -119,19 +119,6 @@ async function downloadAsMp3(videoUrl, title, onProgress, metadata = {}) {
 
   cleanTempDir();
 
-  const metaPath = path.join(downloadDir, `${safeName}.meta.json`);
-  const meta = {
-    title: metadata.title || title || '',
-    artist: metadata.artist || '',
-    thumbnail: metadata.thumbnail || '',
-    downloadedAt: new Date().toISOString(),
-  };
-  try {
-    fs.writeFileSync(metaPath, JSON.stringify(meta, null, 2));
-  } catch (e) {
-    console.error('Failed to write meta file:', e);
-  }
-
   if (onProgress) {
     onProgress({ stage: 'done', percent: 100 });
   }
