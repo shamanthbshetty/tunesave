@@ -180,6 +180,7 @@ export default function MusicPlayer({
   onNext,
   onPrev,
   onShuffleNext,
+  cacheLyrics,
 }) {
   const audioRef = useRef(null)
   const lyricsContainerRef = useRef(null)
@@ -228,34 +229,77 @@ export default function MusicPlayer({
     }
   }, [playing])
 
-  useEffect(() => {
-    if (!currentTrack) return
+  const fetchLyrics = useCallback(async (track) => {
+    if (!track) return
     setLyricsLoading(true)
-    const rawArtist = currentTrack.artist || currentTrack.name?.split(' - ')[0] || ''
-    const rawTrack = currentTrack.name?.split(' - ').slice(1).join(' - ') || currentTrack.name || ''
+
+    const cacheKey = `lyrics-cache-${track.filename}`
+    if (cacheLyrics) {
+      const cached = localStorage.getItem(cacheKey)
+      if (cached) {
+        try {
+          const data = JSON.parse(cached)
+          if (data.syncedLyrics) {
+            setSyncedLyrics(parseLRC(data.syncedLyrics))
+            setLyrics([])
+          } else if (data.plainLyrics) {
+            setLyrics(data.plainLyrics.split('\n').filter((l) => l.trim()))
+            setSyncedLyrics([])
+          }
+          setLyricsLoading(false)
+          return
+        } catch {}
+      }
+    }
+
+    const rawArtist = track.artist || track.name?.split(' - ')[0] || ''
+    const rawTrack = track.name?.split(' - ').slice(1).join(' - ') || track.name || ''
     const artist = cleanLyricsQuery(rawArtist)
-    const track = cleanLyricsQuery(rawTrack)
-    const durParam = currentTrack.durationRaw ? `&duration=${currentTrack.durationRaw}` : ''
-    fetch(`/api/lyrics?artist=${encodeURIComponent(artist)}&track=${encodeURIComponent(track)}${durParam}`)
-      .then((r) => r.json())
-      .then((data) => {
-        if (data.syncedLyrics) {
-          setSyncedLyrics(parseLRC(data.syncedLyrics))
-          setLyrics([])
-        } else if (data.plainLyrics) {
-          setLyrics(data.plainLyrics.split('\n').filter((l) => l.trim()))
-          setSyncedLyrics([])
-        } else {
-          setLyrics([])
-          setSyncedLyrics([])
-        }
-      })
-      .catch(() => {
+    const trackName = cleanLyricsQuery(rawTrack)
+    const durParam = track.durationRaw ? `&duration=${track.durationRaw}` : ''
+
+    try {
+      const res = await fetch(`/api/lyrics?artist=${encodeURIComponent(artist)}&track=${encodeURIComponent(trackName)}${durParam}`)
+      const data = await res.json()
+      if (data.syncedLyrics) {
+        setSyncedLyrics(parseLRC(data.syncedLyrics))
+        setLyrics([])
+      } else if (data.plainLyrics) {
+        setLyrics(data.plainLyrics.split('\n').filter((l) => l.trim()))
+        setSyncedLyrics([])
+      } else {
         setLyrics([])
         setSyncedLyrics([])
-      })
-      .finally(() => setLyricsLoading(false))
-  }, [currentTrack?.filename, currentTrack?.artist, currentTrack?.name])
+      }
+
+      if (cacheLyrics && (data.syncedLyrics || data.plainLyrics)) {
+        localStorage.setItem(cacheKey, JSON.stringify({
+          syncedLyrics: data.syncedLyrics || null,
+          plainLyrics: data.plainLyrics || null,
+        }))
+      }
+    } catch {
+      setLyrics([])
+      setSyncedLyrics([])
+    } finally {
+      setLyricsLoading(false)
+    }
+  }, [cacheLyrics])
+
+  useEffect(() => {
+    if (!currentTrack) return
+    fetchLyrics(currentTrack)
+  }, [currentTrack?.filename, currentTrack?.artist, currentTrack?.name, fetchLyrics])
+
+  useEffect(() => {
+    const handleOnline = () => {
+      if (currentTrack && lyrics.length === 0 && syncedLyrics.length === 0 && !lyricsLoading) {
+        fetchLyrics(currentTrack)
+      }
+    }
+    window.addEventListener('online', handleOnline)
+    return () => window.removeEventListener('online', handleOnline)
+  }, [currentTrack, lyrics.length, syncedLyrics.length, lyricsLoading, fetchLyrics])
 
   useEffect(() => {
     if (!currentTrack) return

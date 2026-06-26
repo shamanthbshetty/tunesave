@@ -24,6 +24,13 @@ function App() {
   const [expandedPlayer, setExpandedPlayer] = useState(false)
   const [queue, setQueue] = useState([])
   const [queueIndex, setQueueIndex] = useState(0)
+  const [cacheLyrics, setCacheLyrics] = useState(() => {
+    return localStorage.getItem('yt-dl-cache-lyrics') === 'true'
+  })
+
+  useEffect(() => {
+    localStorage.setItem('yt-dl-cache-lyrics', cacheLyrics.toString())
+  }, [cacheLyrics])
 
   useEffect(() => {
     fetchSettings()
@@ -278,7 +285,7 @@ function App() {
           </header>
 
           <FadeContent delay={100}>
-            <Settings downloadDir={downloadDir} onDirChange={handleDirChange} />
+            <Settings downloadDir={downloadDir} onDirChange={handleDirChange} cacheLyrics={cacheLyrics} onCacheLyricsChange={setCacheLyrics} />
           </FadeContent>
 
           <FadeContent delay={200}>
@@ -343,6 +350,7 @@ function App() {
           onNext={handleNextTrack}
           onPrev={handlePrevTrack}
           onShuffleNext={handleShuffleNext}
+          cacheLyrics={cacheLyrics}
         />
       )}
     </div>

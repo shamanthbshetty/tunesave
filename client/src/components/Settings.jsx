@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 
-export default function Settings({ downloadDir, onDirChange }) {
+export default function Settings({ downloadDir, onDirChange, cacheLyrics, onCacheLyricsChange }) {
   const [editing, setEditing] = useState(false)
   const [drives, setDrives] = useState([])
   const [currentPath, setCurrentPath] = useState('')
@@ -82,20 +82,45 @@ export default function Settings({ downloadDir, onDirChange }) {
 
   const displayPath = downloadDir || 'Not set'
 
+  const handleClearCache = () => {
+    const keys = Object.keys(localStorage).filter((k) => k.startsWith('lyrics-cache-'))
+    keys.forEach((k) => localStorage.removeItem(k))
+  }
+
   if (!editing) {
     return (
-      <div className="settings-bar">
-        <div className="settings-info">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
-          </svg>
-          <span className="settings-label">Downloads to:</span>
-          <span className="settings-path" title={downloadDir}>{displayPath}</span>
+      <>
+        <div className="settings-bar">
+          <div className="settings-info">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+            </svg>
+            <span className="settings-label">Downloads to:</span>
+            <span className="settings-path" title={downloadDir}>{displayPath}</span>
+          </div>
+          <button className="settings-change-btn" onClick={() => setEditing(true)}>
+            Change Folder
+          </button>
         </div>
-        <button className="settings-change-btn" onClick={() => setEditing(true)}>
-          Change Folder
-        </button>
-      </div>
+        <div className="settings-extra">
+          <label className="toggle-row">
+            <span className="toggle-label">Cache lyrics for offline</span>
+            <button
+              className={`toggle-switch ${cacheLyrics ? 'on' : ''}`}
+              onClick={() => onCacheLyricsChange(!cacheLyrics)}
+              role="switch"
+              aria-checked={cacheLyrics}
+            >
+              <span className="toggle-knob" />
+            </button>
+          </label>
+          {cacheLyrics && (
+            <button className="clear-cache-btn" onClick={handleClearCache}>
+              Clear cached lyrics
+            </button>
+          )}
+        </div>
+      </>
     )
   }
 
