@@ -16,7 +16,15 @@ export default function ResultsList({ results, loading, onDownload, onDownloadAl
   const loadingSection = suggestionsLoading && suggestions.length === 0 && (
     <div className="suggestions-section">
       <h2 className="suggestions-heading">You Might Like</h2>
-      <div className="suggestions-loading">Loading suggestions...</div>
+      <div className="loading-grid">
+        {[...Array(3)].map((_, i) => (
+          <div key={i} className="skeleton-card">
+            <div className="skeleton-thumb" />
+            <div className="skeleton-text" />
+            <div className="skeleton-text short" />
+          </div>
+        ))}
+      </div>
     </div>
   )
 

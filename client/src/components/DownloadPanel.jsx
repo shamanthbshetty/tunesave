@@ -1,4 +1,25 @@
 import { useState } from 'react'
+import useThumbnail from '../hooks/useThumbnail'
+
+function HistoryItemArt({ title, artist }) {
+  const { thumbnail, loading } = useThumbnail(title, artist)
+
+  if (loading) {
+    return <div className="dl-thumb-skeleton" />
+  }
+
+  if (thumbnail) {
+    return <img src={thumbnail} alt="" className="dl-thumb" style={{ borderRadius: 8 }} />
+  }
+
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="history-icon">
+      <path d="M9 18V5l12-2v13" />
+      <circle cx="6" cy="18" r="3" />
+      <circle cx="18" cy="16" r="3" />
+    </svg>
+  )
+}
 
 export default function DownloadPanel({ downloads, onRemove, history, onPlay, currentTrack, playlists, onAddToPlaylist }) {
   const [dropdownId, setDropdownId] = useState(null)
@@ -28,7 +49,7 @@ export default function DownloadPanel({ downloads, onRemove, history, onPlay, cu
 
   const handlePlayFile = (file) => {
     const parsed = parseTrackName(file.name)
-    onPlay({ filename: file.name, name: parsed.name, artist: parsed.artist })
+    onPlay({ filename: file.name, name: parsed.name, artist: parsed.artist, thumbnail: file.thumbnail || '' })
   }
 
   return (
@@ -99,6 +120,7 @@ export default function DownloadPanel({ downloads, onRemove, history, onPlay, cu
           <div className="history-list">
             {history.map((file) => {
               const playing = isPlaying(file.name)
+              const parsed = parseTrackName(file.name)
               return (
                 <div key={file.name} className={`history-item ${playing ? 'now-playing' : ''}`}>
                   {playing ? (
@@ -108,11 +130,7 @@ export default function DownloadPanel({ downloads, onRemove, history, onPlay, cu
                       <span className="eq-bar" />
                     </div>
                   ) : (
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="history-icon">
-                      <path d="M9 18V5l12-2v13" />
-                      <circle cx="6" cy="18" r="3" />
-                      <circle cx="18" cy="16" r="3" />
-                    </svg>
+                    <HistoryItemArt title={file.title || parsed.name} artist={file.artist || parsed.artist} />
                   )}
                   <div className="history-info" onClick={() => handlePlayFile(file)}>
                     <span className="history-name" title={file.name}>{file.name.replace('.mp3', '')}</span>

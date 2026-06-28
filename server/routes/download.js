@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { v4: uuidv4 } = require('uuid');
 const { downloadAsMp3 } = require('../services/converter');
-const { getDownloadDir } = require('../services/config');
+const { getDownloadDir, saveHistoryMeta } = require('../services/config');
 const path = require('path');
 const fs = require('fs');
 
@@ -43,6 +43,13 @@ router.post('/', async (req, res) => {
           status: 'done',
           filename: result.filename,
         });
+
+        if (result.filename) {
+          saveHistoryMeta(result.filename, {
+            artist: artist || '',
+            title: downloadTitle,
+          });
+        }
 
         broadcast(downloadId, { stage: 'done', filename: result.filename });
       } catch (err) {

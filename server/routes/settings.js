@@ -3,7 +3,7 @@ const router = express.Router();
 const path = require('path');
 const fs = require('fs');
 const { exec } = require('child_process');
-const { getDownloadDir, setDownloadDir } = require('../services/config');
+const { getDownloadDir, setDownloadDir, getHistoryMeta } = require('../services/config');
 
 router.get('/', (req, res) => {
   res.json({ downloadDir: getDownloadDir() });
@@ -80,6 +80,31 @@ router.get('/browse', (req, res) => {
   }
 });
 
+const thumbnailCache = new Map();
+
+router.get('/thumbnail', async (req, res) => {
+  const q = req.query.q;
+  if (!q) return res.json({ thumbnail: '' });
+
+  const key = q.toLowerCase().trim();
+  if (thumbnailCache.has(key)) {
+    return res.json({ thumbnail: thumbnailCache.get(key) });
+  }
+
+  try {
+    const url = `https://itunes.apple.com/search?term=${encodeURIComponent(q)}&entity=song&limit=1`;
+    const response = await fetch(url);
+    const data = await response.json();
+    if (data.results?.[0]?.artworkUrl100) {
+      const artwork = data.results[0].artworkUrl100.replace('100x100bb', '600x600bb');
+      thumbnailCache.set(key, artwork);
+      return res.json({ thumbnail: artwork });
+    }
+  } catch (e) {}
+
+  res.json({ thumbnail: '' });
+});
+
 router.get('/history', (req, res) => {
   const downloadDir = getDownloadDir();
   try {
@@ -91,21 +116,13 @@ router.get('/history', (req, res) => {
       .filter((f) => f.endsWith('.mp3'))
       .map((f) => {
         const stat = fs.statSync(path.join(downloadDir, f));
-        let meta = {};
-        const metaFile = f.replace(/\.mp3$/i, '.meta.json');
-        const metaPath = path.join(downloadDir, metaFile);
-        try {
-          if (fs.existsSync(metaPath)) {
-            meta = JSON.parse(fs.readFileSync(metaPath, 'utf8'));
-          }
-        } catch (e) {}
+        const configMeta = getHistoryMeta(f);
         return {
           name: f,
           size: stat.size,
           modified: stat.mtime,
-          thumbnail: meta.thumbnail || '',
-          artist: meta.artist || '',
-          title: meta.title || '',
+          artist: configMeta.artist || '',
+          title: configMeta.title || '',
         };
       })
       .sort((a, b) => b.modified - a.modified);

@@ -5,6 +5,8 @@ import DownloadPanel from './components/DownloadPanel'
 import PlaylistManager from './components/PlaylistManager'
 import Settings from './components/Settings'
 import MusicPlayer from './components/MusicPlayer'
+import Library from './components/Library'
+import Stats, { recordPlay, recordListenTime } from './components/Stats'
 import ShinyText from './components/ShinyText'
 import FadeContent from './components/FadeContent'
 import './App.css'
@@ -27,6 +29,7 @@ function App() {
   const [cacheLyrics, setCacheLyrics] = useState(() => {
     return localStorage.getItem('yt-dl-cache-lyrics') === 'true'
   })
+  const [activeTab, setActiveTab] = useState('search')
 
   useEffect(() => {
     localStorage.setItem('yt-dl-cache-lyrics', cacheLyrics.toString())
@@ -219,6 +222,7 @@ function App() {
       setQueueIndex(index)
     }
     setExpandedPlayer(true)
+    if (track.filename) recordPlay(track.filename)
   }
 
   const handlePlayFromHistory = (track) => {
@@ -227,6 +231,7 @@ function App() {
     setQueue([parsed])
     setQueueIndex(0)
     setExpandedPlayer(true)
+    if (parsed.filename) recordPlay(parsed.filename)
   }
 
   const handleNextTrack = () => {
@@ -270,6 +275,30 @@ function App() {
     }
   }
 
+  const handleQueueReorder = (fromIndex, toIndex) => {
+    setQueue((prev) => {
+      const next = [...prev]
+      const [item] = next.splice(fromIndex, 1)
+      next.splice(toIndex, 0, item)
+      return next
+    })
+    setQueueIndex((prev) => {
+      if (fromIndex === prev) return toIndex
+      if (fromIndex < prev && toIndex >= prev) return prev - 1
+      if (fromIndex > prev && toIndex <= prev) return prev + 1
+      return prev
+    })
+  }
+
+  const handleQueueRemove = (index) => {
+    setQueue((prev) => prev.filter((_, i) => i !== index))
+    setQueueIndex((prev) => {
+      if (index < prev) return prev - 1
+      if (index === prev) return prev
+      return prev
+    })
+  }
+
   return (
     <div className={`app ${currentTrack ? 'has-player' : ''}`}>
       {!expandedPlayer && (
@@ -281,61 +310,94 @@ function App() {
                 <ShinyText text="TuneSave" shineColor="#a78bfa" speed={3} />
               </h1>
             </div>
-            <p className="subtitle">Search, choose, download</p>
+            <nav className="nav-tabs">
+              {[
+                { id: 'search', label: 'Search', icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg> },
+                { id: 'library', label: 'Library', icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 18V5l12-2v13" /><circle cx="6" cy="18" r="3" /><circle cx="18" cy="16" r="3" /></svg> },
+                { id: 'playlists', label: 'Playlists', icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="8" y1="6" x2="21" y2="6" /><line x1="8" y1="12" x2="21" y2="12" /><line x1="8" y1="18" x2="21" y2="18" /><line x1="3" y1="6" x2="3.01" y2="6" /><line x1="3" y1="12" x2="3.01" y2="12" /><line x1="3" y1="18" x2="3.01" y2="18" /></svg> },
+                { id: 'stats', label: 'Stats', icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2" /></svg> },
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  className={`nav-tab ${activeTab === tab.id ? 'active' : ''}`}
+                  onClick={() => setActiveTab(tab.id)}
+                >
+                  {tab.icon}
+                  {tab.label}
+                </button>
+              ))}
+            </nav>
           </header>
 
-          <FadeContent delay={100}>
-            <Settings downloadDir={downloadDir} onDirChange={handleDirChange} cacheLyrics={cacheLyrics} onCacheLyricsChange={setCacheLyrics} />
-          </FadeContent>
+          {activeTab === 'search' && (
+            <>
+              <FadeContent delay={100}>
+                <Settings downloadDir={downloadDir} onDirChange={handleDirChange} cacheLyrics={cacheLyrics} onCacheLyricsChange={setCacheLyrics} />
+              </FadeContent>
 
-          <FadeContent delay={200}>
-            <SearchBar onSearch={handleSearch} loading={loading} searchType={searchType} onTypeChange={setSearchType} />
-          </FadeContent>
+              <SearchBar onSearch={handleSearch} loading={loading} searchType={searchType} onTypeChange={setSearchType} onDownload={handleDownload} isDownloaded={isDownloaded} onPlay={handlePlayFromHistory} />
 
-          {error && (
-            <div className="error-banner">
-              {error}
-              <button className="error-dismiss" onClick={() => setError(null)} title="Dismiss">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <line x1="18" y1="6" x2="6" y2="18" />
-                  <line x1="6" y1="6" x2="18" y2="18" />
-                </svg>
-              </button>
-            </div>
+              {error && (
+                <div className="error-banner">
+                  {error}
+                  <button className="error-dismiss" onClick={() => setError(null)} title="Dismiss">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <line x1="18" y1="6" x2="6" y2="18" />
+                      <line x1="6" y1="6" x2="18" y2="18" />
+                    </svg>
+                  </button>
+                </div>
+              )}
+
+              <main className="main-content">
+                <div className="results-section">
+                  <ResultsList
+                    results={results}
+                    loading={loading}
+                    onDownload={handleDownload}
+                    onDownloadAll={handleDownloadAll}
+                    searchType={searchType}
+                    isDownloaded={isDownloaded}
+                    suggestions={suggestions}
+                    suggestionsLoading={suggestionsLoading}
+                  />
+                </div>
+
+                <aside className="downloads-section">
+                  <DownloadPanel
+                    downloads={downloads}
+                    onRemove={removeDownload}
+                    history={history}
+                    onPlay={handlePlayFromHistory}
+                    currentTrack={currentTrack}
+                    playlists={playlists}
+                    onAddToPlaylist={handleAddToPlaylist}
+                  />
+                </aside>
+              </main>
+            </>
           )}
 
-          <main className="main-content">
-            <div className="results-section">
-              <ResultsList
-                results={results}
-                loading={loading}
-                onDownload={handleDownload}
-                onDownloadAll={handleDownloadAll}
-                searchType={searchType}
-                isDownloaded={isDownloaded}
-                suggestions={suggestions}
-                suggestionsLoading={suggestionsLoading}
-              />
-            </div>
+          {activeTab === 'library' && (
+            <Library
+              history={history}
+              onPlay={handlePlayFromHistory}
+              currentTrack={currentTrack}
+            />
+          )}
 
-            <aside className="downloads-section">
-              <DownloadPanel
-                downloads={downloads}
-                onRemove={removeDownload}
-                history={history}
-                onPlay={handlePlayFromHistory}
-                currentTrack={currentTrack}
-                playlists={playlists}
-                onAddToPlaylist={handleAddToPlaylist}
-              />
+          {activeTab === 'playlists' && (
+            <div className="playlists-page">
               <PlaylistManager
                 playlists={playlists}
                 onRefresh={fetchPlaylists}
                 onPlayTrack={playTrack}
                 currentTrack={currentTrack}
               />
-            </aside>
-          </main>
+            </div>
+          )}
+
+          {activeTab === 'stats' && <Stats />}
         </>
       )}
 
@@ -350,7 +412,11 @@ function App() {
           onNext={handleNextTrack}
           onPrev={handlePrevTrack}
           onShuffleNext={handleShuffleNext}
+          onQueueReorder={handleQueueReorder}
+          onQueueRemove={handleQueueRemove}
+          onPlayFromQueue={(index) => { setQueueIndex(index); setCurrentTrack(queue[index]) }}
           cacheLyrics={cacheLyrics}
+          onListenTime={recordListenTime}
         />
       )}
     </div>

@@ -76,4 +76,17 @@ function savePlaylists(playlists) {
   writeConfig(config);
 }
 
-module.exports = { getDownloadDir, setDownloadDir, getTempDir, cleanTempDir, readConfig, getPlaylists, savePlaylists };
+function getHistoryMeta(filename) {
+  const config = readConfig();
+  const history = config.history || {};
+  return history[filename] || {};
+}
+
+function saveHistoryMeta(filename, meta) {
+  const config = readConfig();
+  if (!config.history) config.history = {};
+  config.history[filename] = meta;
+  writeConfig(config);
+}
+
+module.exports = { getDownloadDir, setDownloadDir, getTempDir, cleanTempDir, readConfig, getPlaylists, savePlaylists, getHistoryMeta, saveHistoryMeta };
